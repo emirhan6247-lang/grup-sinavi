@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grup Sınavı Platformu</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+        }
+
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; min-height: 100vh; }
+        
+        /* Navigasyon Çubuğu */
+        nav { background-color: var(--card-bg); padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: none; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+        .nav-brand { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .nav-links { display: flex; gap: 5px; }
+        .nav-links button { background: none; color: var(--text-muted); border: none; padding: 8px 12px; font-size: 15px; cursor: pointer; font-weight: 600; border-radius: 8px; transition: 0.2s; }
+        .nav-links button.active-nav { background-color: var(--primary); color: white; }
+        .nav-links button:hover:not(.active-nav) { background: var(--bg); color: var(--text-main); }
+        .nav-admin-btn { color: var(--danger) !important; border: 1px solid var(--danger) !important; }
+        .nav-admin-btn.active-nav { background-color: var(--danger) !important; color: white !important; }
+
+        .app-container { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+        .screen { display: none; animation: fadeIn 0.3s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+        h1, h2, h3 { margin-top: 0; color: var(--text-main); }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border); }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0 16px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 15px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        button { width: 100%; background-color: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; transition: 0.2s; }
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .btn-success { background-color: var(--success); } .btn-success:hover { background-color: #059669; }
+        .btn-danger { background-color: var(--danger); } .btn-danger:hover { background-color: #dc2626; }
+        .btn-warning { background-color: var(--warning); color: #000; }
+        .btn-small { width: auto; padding: 8px 12px; font-size: 13px; display: inline-block; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+        /* Soru Havuzu Stilleri */
+        .question-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+        
+        /* Sınav Stilleri */
+        .exam-q-box { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .radio-option { display: block; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+        .radio-option:hover { background: var(--bg); }
+        .radio-option input { margin-right: 10px; }
+        .leaderboard-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); font-size: 16px; }
+
+        /* Admin Tablo Stilleri */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background-color: #f1f5f9; color: #475569; }
+    </style>
+</head>
+<body>
+
+<!-- ÜST MENÜ (Giriş yaptıktan sonra görünecek) -->
+<nav id="navbar">
+    <div class="nav-brand">🎯 <span id="navUserName">Sınav Platformu</span></div>
+    <div class="nav-links">
+        <button id="navPoolBtn" class="active-nav">Soru Havuzu</button>
+        <button id="navExamBtn">Sınav Modu</button>
+        <button id="navAdminBtn" class="nav-admin-btn">⚙️ Admin</button>
+    </div>
+</nav>
+
+<div class="app-container">
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div id="loginScreen" class="screen active">
+        <div class="card" style="max-width: 400px; margin: 40px auto;">
+            <h2 style="text-align: center;">Ekibe Katıl</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">Sisteme adınla giriş yap.</p>
+            <input type="text" id="usernameInput" placeholder="Adınız (Örn: Emirhan, Kaan)" autocomplete="off">
+            <button id="loginBtn">Giriş Yap</button>
+        </div>
+    </div>
+
+    <!-- 2. SORU HAVUZU EKRANI (Kendi Sorularını Yazma/Düzenleme) -->
+    <div id="poolScreen" class="screen">
+        <div class="card" style="text-align: center; background: #eff6ff; border: 1px solid #bfdbfe;">
+            <h3 style="color: var(--primary); margin: 0;">Sistemdeki Toplam Soru: <span id="totalQCount" style="font-size: 24px;">0</span> / 16</h3>
+        </div>
+
+        <div class="card">
+            <div class="header-bar">
+                <h2>Sorularım (<span id="myQCountText">0</span>/4)</h2>
+            </div>
+            
+            <!-- Soru Ekleme Formu -->
+            <div id="formSection" style="background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <h3 id="formTitle">Yeni Soru Ekle</h3>
+                <textarea id="qText" rows="3" placeholder="Soruyu buraya yaz..."></textarea>
+                <input type="text" id="optA" placeholder="A) Şıkkı">
+                <input type="text" id="optB" placeholder="B) Şıkkı">
+                <input type="text" id="optC" placeholder="C) Şıkkı">
+                <input type="text" id="optD" placeholder="D) Şıkkı">
+                <select id="correctOpt">
+                    <option value="">Doğru Cevabı Seçin...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <div style="display: flex; gap: 10px;">
+                    <button id="saveQBtn">Havuza Gönder</button>
+                    <button id="cancelEditBtn" class="btn-outline" style="display: none;">İptal</button>
+                </div>
+            </div>
+
+            <!-- Benim Sorularım Listesi -->
+            <h3 style="margin-top: 30px;">Eklediğin Sorular</h3>
+            <div id="myQuestionsList">
+                <p style="color: var(--text-muted); font-style: italic;">Henüz soru eklemedin.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. SINAV MODU EKRANI (Alt Durumları İçerir) -->
+    <div id="examMainScreen" class="screen">
+        
+        <!-- Durum 3A: Sorular Bekleniyor -->
+        <div id="examWaiting" class="card" style="text-align: center; padding: 40px 20px;">
+            <h2>⏳ Sınav Henüz Hazır Değil</h2>
+            <p>Sınavın başlaması için havuzda 16 soru birikmesi gerekiyor.</p>
+            <p style="font-size: 18px; font-weight: bold; color: var(--primary);">Mevcut: <span id="waitQCount">0</span> / 16</p>
+        </div>
+
+        <!-- Durum 3B: Sınav Çözme Alanı -->
+        <div id="examActive" style="display: none;">
+            <div class="header-bar card" style="background: #fef2f2; border: 1px solid #fecaca;">
+                <h2 style="margin: 0; color: var(--danger);">Sınav Başladı!</h2>
+                <div style="font-weight: bold; color: var(--danger);">Dikkatli Çöz</div>
+            </div>
+            <div id="questionsContainer"></div>
+            <button id="submitExamBtn" class="btn-success" style="margin-bottom: 40px;">Sınavı Bitir ve Gönder</button>
+        </div>
+
+        <!-- Durum 3C: Sonuçlar ve Liderlik -->
+        <div id="examResults" style="display: none;">
+            <div class="card" style="text-align: center;">
+                <h2>Sınavı Tamamladın!</h2>
+                <h1 style="color: var(--primary); font-size: 48px; margin: 10px 0;">
+                    <span id="myScoreText">0</span><span style="font-size: 24px; color: var(--text-muted);">/16</span>
+                </h1>
+            </div>
+            <div class="card">
+                <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 10px;">🏆 Liderlik Tablosu</h3>
+                <div id="leaderboard"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. ADMIN PANELİ EKRANI -->
+    <div id="adminScreen" class="screen">
+        <div class="card" style="background: var(--dark); color: white;">
+            <h2 style="margin: 0;">⚙️ Admin Paneli</h2>
+            <p style="margin: 5px 0 0 0; color: #cbd5e1;">Tüm sistemi buradan yönetebilirsiniz.</p>
+        </div>
+
+        <div class="card">
+            <h3>Tüm Sorular Havuzu (<span id="adminQCount">0</span>)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>No</th><th>Yazar</th><th>Soru</th><th>Cevap</th><th>İşlem</th></tr>
+                    </thead>
+                    <tbody id="adminQuestionsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Sınavı Bitirenler (<span id="adminSCount">0</span>)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Sıra</th><th>İsim</th><th>Puan</th><th>İşlem</th></tr>
+                    </thead>
+                    <tbody id="adminScoresTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card" style="background: #fee2e2; border: 1px solid #fca5a5;">
+            <h3 style="color: var(--danger); margin-top: 0;">⚠️ Tehlikeli Bölge</h3>
+            <p>Etkinlik bittiğinde veya yeni tur başlatmak için tüm veritabanını sıfırlayabilirsiniz.</p>
+            <button id="resetSystemBtn" class="btn-danger">Tüm Sistemi Sıfırla (Yeni Oyun)</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Firebase İşlemleri -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // KENDİ FIREBASE CONFIG BİLGİLERİNİ BURAYA YAPIŞTIR
+    const firebaseConfig = {
+    apiKey: "AIzaSyAOn-E637ZDKePy_law5TpvdGc4dnrBaGY",
+    authDomain: "honeybenimgencligim.firebaseapp.com",
+    projectId: "honeybenimgencligim",
+    storageBucket: "honeybenimgencligim.firebasestorage.app",
+    messagingSenderId: "660346479870",
+    appId: "1:660346479870:web:fd25832a3df0a4f56b71af",
+    measurementId: "G-FM423C9DT8"
+  };
+
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Uygulama Değişkenleri
+    let currentUser = "";
+    let allQuestions = [];
+    let myQuestions = [];
+    let allScores = [];
+    let hasSubmittedExam = false;
+    let editingQuestionId = null;
+
+    // --- SEKME / EKRAN GEÇİŞ FONKSİYONLARI ---
+    function switchTab(tabId, screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        
+        document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active-nav'));
+        document.getElementById(tabId).classList.add('active-nav');
+        window.scrollTo(0,0);
+    }
+
+    document.getElementById('navPoolBtn').addEventListener('click', () => switchTab('navPoolBtn', 'poolScreen'));
+    
+    document.getElementById('navExamBtn').addEventListener('click', () => {
+        switchTab('navExamBtn', 'examMainScreen');
+        checkExamState();
+    });
+
+    document.getElementById('navAdminBtn').addEventListener('click', () => {
+        const pass = prompt("Admin Şifresini Girin:");
+        if(pass === "1234") {
+            switchTab('navAdminBtn', 'adminScreen');
+        } else if(pass !== null) {
+            alert("Hatalı Şifre!");
+        }
+    });
+
+    // --- 1. GİRİŞ YAPMA ---
+    document.getElementById('loginBtn').addEventListener('click', () => {
+        const name = document.getElementById('usernameInput').value.trim();
+        if (name.length > 2) {
+            currentUser = name;
+            document.getElementById('navUserName').innerText = name;
+            document.getElementById('navbar').style.display = 'flex';
+            
+            updateMyData(); 
+            switchTab('navPoolBtn', 'poolScreen');
+        } else {
+            alert("Lütfen geçerli bir isim girin.");
+        }
+    });
+
+    function updateMyData() {
+        if(!currentUser) return;
+        
+        // 1. Sorularımı Bul
+        myQuestions = allQuestions.filter(q => q.author === currentUser);
+        document.getElementById('myQCountText').innerText = myQuestions.length;
+        renderMyQuestionsList();
+        
+        // Form gizleme/gösterme mantığı (Limit: 4)
+        if (myQuestions.length >= 4 && !editingQuestionId) {
+            document.getElementById('formSection').style.display = 'none';
+        } else {
+            document.getElementById('formSection').style.display = 'block';
+        }
+
+        // 2. Sınavı çözmüş müyüm kontrol et
+        const myScoreData = allScores.find(s => s.name === currentUser);
+        if(myScoreData) {
+            hasSubmittedExam = true;
+            document.getElementById('myScoreText').innerText = myScoreData.score;
+        } else {
+            hasSubmittedExam = false;
+        }
+    }
+
+    // --- 2. SORULARIMI YÖNET (HAVUZ) ---
+    function renderMyQuestionsList() {
+        const listDiv = document.getElementById('myQuestionsList');
+        if (myQuestions.length === 0) {
+            listDiv.innerHTML = `<p style="color: var(--text-muted); font-style: italic;">Henüz soru eklemedin.</p>`;
+            return;
+        }
+        listDiv.innerHTML = "";
+        myQuestions.forEach((q, index) => {
+            listDiv.innerHTML += `
+                <div class="question-item">
+                    <strong>Soru ${index + 1}:</strong> ${q.questionText}
+                    <div style="margin-top: 5px; font-size: 13px; color: var(--success);">Doğru Cevap: ${q.correctAnswer}) ${q.options[q.correctAnswer]}</div>
+                    <div style="margin-top: 10px;">
+                        <button onclick="startEdit('${q.id}')" class="btn-small btn-warning">Düzenle</button>
+                        <button onclick="deleteGlobalDoc('aile_questions', '${q.id}')" class="btn-small btn-danger">Sil</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById('saveQBtn').addEventListener('click', async () => {
+        const qText = document.getElementById('qText').value.trim();
+        const optA = document.getElementById('optA').value.trim();
+        const optB = document.getElementById('optB').value.trim();
+        const optC = document.getElementById('optC').value.trim();
+        const optD = document.getElementById('optD').value.trim();
+        const correctOpt = document.getElementById('correctOpt').value;
+
+        if (!qText || !optA || !optB || !optC || !optD || !correctOpt) { alert("Tüm alanları doldurun!"); return; }
+
+        const questionData = { author: currentUser, questionText: qText, options: { A: optA, B: optB, C: optC, D: optD }, correctAnswer: correctOpt };
+
+        document.getElementById('saveQBtn').disabled = true;
+        try {
+            if (editingQuestionId) {
+                await updateDoc(doc(db, "aile_questions", editingQuestionId), questionData);
+            } else {
+                await addDoc(collection(db, "aile_questions"), questionData);
+            }
+            cancelEdit(); 
+        } catch (error) { alert("Hata oluştu."); }
+        document.getElementById('saveQBtn').disabled = false;
+    });
+
+    window.startEdit = function(id) {
+        const q = myQuestions.find(x => x.id === id);
+        if (!q) return;
+        editingQuestionId = id;
+        document.getElementById('formTitle').innerText = "Soruyu Düzenle";
+        document.getElementById('qText').value = q.questionText;
+        document.getElementById('optA').value = q.options.A;
+        document.getElementById('optB').value = q.options.B;
+        document.getElementById('optC').value = q.options.C;
+        document.getElementById('optD').value = q.options.D;
+        document.getElementById('correctOpt').value = q.correctAnswer;
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        document.getElementById('formSection').style.display = 'block';
+    };
+
+    document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+    
+    function cancelEdit() {
+        editingQuestionId = null;
+        document.getElementById('formTitle').innerText = "Yeni Soru Ekle";
+        document.getElementById('qText').value = "";
+        document.getElementById('optA').value = ""; document.getElementById('optB').value = "";
+        document.getElementById('optC').value = ""; document.getElementById('optD').value = "";
+        document.getElementById('correctOpt').value = "";
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        updateMyData(); 
+    }
+
+    // --- 3. SINAV MODU MANTIĞI ---
+    function checkExamState() {
+        document.getElementById('examWaiting').style.display = 'none';
+        document.getElementById('examActive').style.display = 'none';
+        document.getElementById('examResults').style.display = 'none';
+
+        if (hasSubmittedExam) {
+            document.getElementById('examResults').style.display = 'block';
+        } else if (allQuestions.length >= 16) {
+            renderExamForm();
+            document.getElementById('examActive').style.display = 'block';
+        } else {
+            document.getElementById('examWaiting').style.display = 'block';
+        }
+    }
+
+    function renderExamForm() {
+        const container = document.getElementById('questionsContainer');
+        if (container.innerHTML !== "") return; 
+        
+        const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+        shuffled.forEach((q, index) => {
+            container.innerHTML += `
+                <div class="exam-q-box">
+                    <div style="font-weight: bold; margin-bottom: 10px;">${index + 1}. ${q.questionText}</div>
+                    <label class="radio-option"><input type="radio" name="${q.id}" value="A"> A) ${q.options.A}</label>
+                    <label class="radio-option"><input type="radio" name="${q.id}" value="B"> B) ${q.options.B}</label>
+                    <label class="radio-option"><input type="radio" name="${q.id}" value="C"> C) ${q.options.C}</label>
+                    <label class="radio-option"><input type="radio" name="${q.id}" value="D"> D) ${q.options.D}</label>
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById('submitExamBtn').addEventListener('click', async () => {
+        let score = 0;
+        allQuestions.forEach(q => {
+            const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+            if (selected && selected.value === q.correctAnswer) score++;
+        });
+
+        document.getElementById('submitExamBtn').disabled = true;
+        document.getElementById('submitExamBtn').innerText = "Gönderiliyor...";
+
+        await addDoc(collection(db, "aile_scores"), { name: currentUser, score: score });
+        
+        document.getElementById('submitExamBtn').disabled = false;
+        document.getElementById('submitExamBtn').innerText = "Sınavı Bitir ve Gönder";
+    });
+
+    // --- 4. VERİTABANI DİNLEME ---
+    onSnapshot(collection(db, "aile_questions"), (snapshot) => {
+        allQuestions = [];
+        snapshot.forEach(docSnap => allQuestions.push({ id: docSnap.id, ...docSnap.data() }));
+        
+        const count = allQuestions.length;
+        document.getElementById('totalQCount').innerText = count;
+        document.getElementById('waitQCount').innerText = count;
+        
+        document.getElementById('adminQCount').innerText = count;
+        const adminTbody = document.getElementById('adminQuestionsTable');
+        adminTbody.innerHTML = "";
+        allQuestions.forEach((q, i) => {
+            adminTbody.innerHTML += `<tr><td>${i+1}</td><td>${q.author}</td><td>${q.questionText}</td><td>${q.correctAnswer}</td>
+                <td><button onclick="deleteGlobalDoc('aile_questions', '${q.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
+        });
+
+        updateMyData();
+        if(document.getElementById('examMainScreen').classList.contains('active')) checkExamState();
+    });
+
+    onSnapshot(collection(db, "aile_scores"), (snapshot) => {
+        allScores = [];
+        snapshot.forEach(docSnap => allScores.push({ id: docSnap.id, ...docSnap.data() }));
+        allScores.sort((a, b) => b.score - a.score);
+
+        const lb = document.getElementById('leaderboard');
+        lb.innerHTML = "";
+        allScores.forEach((s, i) => {
+            let medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+            lb.innerHTML += `<div class="leaderboard-row"><span>${medal} ${i+1}. ${s.name}</span><span>${s.score} Puan</span></div>`;
+        });
+
+        document.getElementById('adminSCount').innerText = allScores.length;
+        const adminSb = document.getElementById('adminScoresTable');
+        adminSb.innerHTML = "";
+        allScores.forEach((s, i) => {
+            adminSb.innerHTML += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.score}</td>
+                <td><button onclick="deleteGlobalDoc('aile_scores', '${s.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
+        });
+
+        updateMyData();
+        if(document.getElementById('examMainScreen').classList.contains('active')) checkExamState();
+    });
+
+    // --- 5. ORTAK / ADMIN İŞLEMLERİ ---
+    window.deleteGlobalDoc = async function(colName, id) {
+        if(confirm("Silmek istediğinize emin misiniz?")) {
+            await deleteDoc(doc(db, colName, id));
+            if(editingQuestionId === id) cancelEdit();
+        }
+    };
+
+    document.getElementById('resetSystemBtn').addEventListener('click', async () => {
+        const pass = prompt("DİKKAT: Veritabanı temizlenecek. Onaylamak için 'SIFIRLA' yazın:");
+        if (pass === "SIFIRLA") {
+            document.getElementById('resetSystemBtn').disabled = true;
+            document.getElementById('resetSystemBtn').innerText = "Temizleniyor...";
+            
+            // Aile koleksiyonlarını temizle
+            const qSnap = await getDocs(collection(db, "aile_questions"));
+            qSnap.forEach(async (d) => await deleteDoc(doc(db, "aile_questions", d.id)));
+            
+            const sSnap = await getDocs(collection(db, "aile_scores"));
+            sSnap.forEach(async (d) => await deleteDoc(doc(db, "aile_scores", d.id)));
+            
+            document.getElementById('questionsContainer').innerHTML = "";
+            
+            alert("Tüm sistem sıfırlandı!");
+            document.getElementById('resetSystemBtn').disabled = false;
+            document.getElementById('resetSystemBtn').innerText = "Tüm Sistemi Sıfırla (Yeni Oyun)";
+        }
+    });
+
+</script>
+</body>
+</html>
