@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grup Sınavı Platformu</title>
+    <title>Grup Sınavı Platformu - 5 Kişilik Özel</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -71,7 +71,7 @@
 </head>
 <body>
 
-<!-- ÜST MENÜ (Giriş yaptıktan sonra görünecek) -->
+<!-- ÜST MENÜ -->
 <nav id="navbar">
     <div class="nav-brand">🎯 <span id="navUserName">Sınav Platformu</span></div>
     <div class="nav-links">
@@ -86,17 +86,17 @@
     <!-- 1. GİRİŞ EKRANI -->
     <div id="loginScreen" class="screen active">
         <div class="card" style="max-width: 400px; margin: 40px auto;">
-            <h2 style="text-align: center;">Ekibe Katıl</h2>
+            <h2 style="text-align: center;">Ekibe Katıl (5 Kişilik Sistem)</h2>
             <p style="text-align: center; color: var(--text-muted); margin-bottom: 20px;">Sisteme adınla giriş yap.</p>
-            <input type="text" id="usernameInput" placeholder="Adınız (Örn: Emirhan, Kaan)" autocomplete="off">
+            <input type="text" id="usernameInput" placeholder="Adınız" autocomplete="off">
             <button id="loginBtn">Giriş Yap</button>
         </div>
     </div>
 
-    <!-- 2. SORU HAVUZU EKRANI (Kendi Sorularını Yazma/Düzenleme) -->
+    <!-- 2. SORU HAVUZU EKRANI -->
     <div id="poolScreen" class="screen">
         <div class="card" style="text-align: center; background: #eff6ff; border: 1px solid #bfdbfe;">
-            <h3 style="color: var(--primary); margin: 0;">Sistemdeki Toplam Soru: <span id="totalQCount" style="font-size: 24px;">0</span> / 16</h3>
+            <h3 style="color: var(--primary); margin: 0;">Sistemdeki Toplam Soru: <span id="totalQCount" style="font-size: 24px;">0</span> / 20</h3>
         </div>
 
         <div class="card">
@@ -133,14 +133,14 @@
         </div>
     </div>
 
-    <!-- 3. SINAV MODU EKRANI (Alt Durumları İçerir) -->
+    <!-- 3. SINAV MODU EKRANI -->
     <div id="examMainScreen" class="screen">
         
         <!-- Durum 3A: Sorular Bekleniyor -->
         <div id="examWaiting" class="card" style="text-align: center; padding: 40px 20px;">
             <h2>⏳ Sınav Henüz Hazır Değil</h2>
-            <p>Sınavın başlaması için havuzda 16 soru birikmesi gerekiyor.</p>
-            <p style="font-size: 18px; font-weight: bold; color: var(--primary);">Mevcut: <span id="waitQCount">0</span> / 16</p>
+            <p>Sınavın başlaması için havuzda 20 soru birikmesi gerekiyor.</p>
+            <p style="font-size: 18px; font-weight: bold; color: var(--primary);">Mevcut: <span id="waitQCount">0</span> / 20</p>
         </div>
 
         <!-- Durum 3B: Sınav Çözme Alanı -->
@@ -158,7 +158,7 @@
             <div class="card" style="text-align: center;">
                 <h2>Sınavı Tamamladın!</h2>
                 <h1 style="color: var(--primary); font-size: 48px; margin: 10px 0;">
-                    <span id="myScoreText">0</span><span style="font-size: 24px; color: var(--text-muted);">/16</span>
+                    <span id="myScoreText">0</span><span style="font-size: 24px; color: var(--text-muted);">/20</span>
                 </h1>
             </div>
             <div class="card">
@@ -228,7 +228,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Uygulama Değişkenleri
     let currentUser = "";
     let allQuestions = [];
     let myQuestions = [];
@@ -236,7 +235,6 @@
     let hasSubmittedExam = false;
     let editingQuestionId = null;
 
-    // --- SEKME / EKRAN GEÇİŞ FONKSİYONLARI ---
     function switchTab(tabId, screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
@@ -262,7 +260,6 @@
         }
     });
 
-    // --- 1. GİRİŞ YAPMA ---
     document.getElementById('loginBtn').addEventListener('click', () => {
         const name = document.getElementById('usernameInput').value.trim();
         if (name.length > 2) {
@@ -280,19 +277,17 @@
     function updateMyData() {
         if(!currentUser) return;
         
-        // 1. Sorularımı Bul
         myQuestions = allQuestions.filter(q => q.author === currentUser);
         document.getElementById('myQCountText').innerText = myQuestions.length;
         renderMyQuestionsList();
         
-        // Form gizleme/gösterme mantığı (Limit: 4)
+        // Form limiti 4 soru
         if (myQuestions.length >= 4 && !editingQuestionId) {
             document.getElementById('formSection').style.display = 'none';
         } else {
             document.getElementById('formSection').style.display = 'block';
         }
 
-        // 2. Sınavı çözmüş müyüm kontrol et
         const myScoreData = allScores.find(s => s.name === currentUser);
         if(myScoreData) {
             hasSubmittedExam = true;
@@ -302,7 +297,6 @@
         }
     }
 
-    // --- 2. SORULARIMI YÖNET (HAVUZ) ---
     function renderMyQuestionsList() {
         const listDiv = document.getElementById('myQuestionsList');
         if (myQuestions.length === 0) {
@@ -317,7 +311,7 @@
                     <div style="margin-top: 5px; font-size: 13px; color: var(--success);">Doğru Cevap: ${q.correctAnswer}) ${q.options[q.correctAnswer]}</div>
                     <div style="margin-top: 10px;">
                         <button onclick="startEdit('${q.id}')" class="btn-small btn-warning">Düzenle</button>
-                        <button onclick="deleteGlobalDoc('aile_questions', '${q.id}')" class="btn-small btn-danger">Sil</button>
+                        <button onclick="deleteGlobalDoc('besli_questions', '${q.id}')" class="btn-small btn-danger">Sil</button>
                     </div>
                 </div>
             `;
@@ -339,9 +333,9 @@
         document.getElementById('saveQBtn').disabled = true;
         try {
             if (editingQuestionId) {
-                await updateDoc(doc(db, "aile_questions", editingQuestionId), questionData);
+                await updateDoc(doc(db, "besli_questions", editingQuestionId), questionData);
             } else {
-                await addDoc(collection(db, "aile_questions"), questionData);
+                await addDoc(collection(db, "besli_questions"), questionData);
             }
             cancelEdit(); 
         } catch (error) { alert("Hata oluştu."); }
@@ -376,7 +370,6 @@
         updateMyData(); 
     }
 
-    // --- 3. SINAV MODU MANTIĞI ---
     function checkExamState() {
         document.getElementById('examWaiting').style.display = 'none';
         document.getElementById('examActive').style.display = 'none';
@@ -384,7 +377,8 @@
 
         if (hasSubmittedExam) {
             document.getElementById('examResults').style.display = 'block';
-        } else if (allQuestions.length >= 16) {
+        } else if (allQuestions.length >= 20) {
+            // Hedef: 20 Soru
             renderExamForm();
             document.getElementById('examActive').style.display = 'block';
         } else {
@@ -420,14 +414,13 @@
         document.getElementById('submitExamBtn').disabled = true;
         document.getElementById('submitExamBtn').innerText = "Gönderiliyor...";
 
-        await addDoc(collection(db, "aile_scores"), { name: currentUser, score: score });
+        await addDoc(collection(db, "besli_scores"), { name: currentUser, score: score });
         
         document.getElementById('submitExamBtn').disabled = false;
         document.getElementById('submitExamBtn').innerText = "Sınavı Bitir ve Gönder";
     });
 
-    // --- 4. VERİTABANI DİNLEME ---
-    onSnapshot(collection(db, "aile_questions"), (snapshot) => {
+    onSnapshot(collection(db, "besli_questions"), (snapshot) => {
         allQuestions = [];
         snapshot.forEach(docSnap => allQuestions.push({ id: docSnap.id, ...docSnap.data() }));
         
@@ -440,14 +433,14 @@
         adminTbody.innerHTML = "";
         allQuestions.forEach((q, i) => {
             adminTbody.innerHTML += `<tr><td>${i+1}</td><td>${q.author}</td><td>${q.questionText}</td><td>${q.correctAnswer}</td>
-                <td><button onclick="deleteGlobalDoc('aile_questions', '${q.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
+                <td><button onclick="deleteGlobalDoc('besli_questions', '${q.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
         });
 
         updateMyData();
         if(document.getElementById('examMainScreen').classList.contains('active')) checkExamState();
     });
 
-    onSnapshot(collection(db, "aile_scores"), (snapshot) => {
+    onSnapshot(collection(db, "besli_scores"), (snapshot) => {
         allScores = [];
         snapshot.forEach(docSnap => allScores.push({ id: docSnap.id, ...docSnap.data() }));
         allScores.sort((a, b) => b.score - a.score);
@@ -464,14 +457,13 @@
         adminSb.innerHTML = "";
         allScores.forEach((s, i) => {
             adminSb.innerHTML += `<tr><td>${i+1}</td><td>${s.name}</td><td>${s.score}</td>
-                <td><button onclick="deleteGlobalDoc('aile_scores', '${s.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
+                <td><button onclick="deleteGlobalDoc('besli_scores', '${s.id}')" class="btn-small btn-danger">Sil</button></td></tr>`;
         });
 
         updateMyData();
         if(document.getElementById('examMainScreen').classList.contains('active')) checkExamState();
     });
 
-    // --- 5. ORTAK / ADMIN İŞLEMLERİ ---
     window.deleteGlobalDoc = async function(colName, id) {
         if(confirm("Silmek istediğinize emin misiniz?")) {
             await deleteDoc(doc(db, colName, id));
@@ -485,12 +477,12 @@
             document.getElementById('resetSystemBtn').disabled = true;
             document.getElementById('resetSystemBtn').innerText = "Temizleniyor...";
             
-            // Aile koleksiyonlarını temizle
-            const qSnap = await getDocs(collection(db, "aile_questions"));
-            qSnap.forEach(async (d) => await deleteDoc(doc(db, "aile_questions", d.id)));
+            // Yeni koleksiyonları temizle
+            const qSnap = await getDocs(collection(db, "besli_questions"));
+            qSnap.forEach(async (d) => await deleteDoc(doc(db, "besli_questions", d.id)));
             
-            const sSnap = await getDocs(collection(db, "aile_scores"));
-            sSnap.forEach(async (d) => await deleteDoc(doc(db, "aile_scores", d.id)));
+            const sSnap = await getDocs(collection(db, "besli_scores"));
+            sSnap.forEach(async (d) => await deleteDoc(doc(db, "besli_scores", d.id)));
             
             document.getElementById('questionsContainer').innerHTML = "";
             
